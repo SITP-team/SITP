@@ -182,3 +182,4 @@ cython_debug/
 *.spp
 *.txt
 *.md
+path_config.py
