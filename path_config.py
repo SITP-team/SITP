@@ -1,10 +1,10 @@
 # 路径配置文件
 
 # 模型模板文件路径
-MODEL_FILE = r"c:/SITP/大语言模型建模/refactor1/test2.spp"
+MODEL_FILE = r"C:/Users/16222/Documents/GitHub/SITP/test2.spp"
 
 # 生成的模型保存路径
-SAVED_MODEL_FILE = r"c:/SITP/大语言模型建模/refactor1/saved.spp"
+SAVED_MODEL_FILE = r"D:/AAA_Tongji/SITP/stage2/saved.spp"
 
 # 数据输出文件路径
 DATA_OUTPUT_FILE = "data_output.txt"
