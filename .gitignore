@@ -183,3 +183,10 @@ cython_debug/
 *.txt
 *.md
 path_config.py
+# Word documents
+*.docx
+*.doc
+# Excel files
+*.xlsx
+*.xls
+*.csv
