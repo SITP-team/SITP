@@ -181,7 +181,6 @@ cython_debug/
 .cursorindexingignore
 *.spp
 *.txt
-*.md
 path_config.py
 # Word documents
 *.docx
