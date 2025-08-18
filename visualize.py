@@ -261,4 +261,4 @@ if __name__ == "__main__":
 
     # 显示静态图（Matplotlib）
     print("显示静态图...")
-    visualizer.show_static(sample_graph_data)
+    visualizer.show_static(sample_graph_data)    visualizer.show_static(sample_graph_data)

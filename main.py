@@ -3,13 +3,16 @@
 """
 Created on Thu Jul 17 12:33:39 2025
 @author: chunlongyu
-整合版本：支持故障、传送器、数据读写分离及容量0传送器处理
-重构版本：模块化处理2
+整合版本：支持故障、传送器、数据读写分离分离及容量0传送器处理
+重构版本：适配新的节点数据结构（使用name作为标识）
 """
 
 import time
 import json
+import uuid
 import pythoncom
+import networkx as nx
+import matplotlib.pyplot as plt
 from api_utils import make_api_request
 from json_utils import extract_json_from_response
 from graph_preprocessor import convert_zero_capacity_conveyors_to_edges
@@ -19,6 +22,24 @@ from plant_simulator import create_plant_simulation_model
 from visualize import ProductionLineVisualizer  # <-- 新增导入
 
 from prompt_config import SYSTEM_PROMPT
+from visualize import visualize_directed_graph
+
+# 全局字体配置，覆盖所有文本元素
+plt.rcParams.update({
+    "font.family": ["SimHei", "WenQuanYi Micro Hei", "Heiti TC", "Arial Unicode MS"],
+    "axes.unicode_minus": False,  # 解决负号显示问题
+    "text.usetex": False  # 禁用 LaTeX 渲染（避免与中文字体冲突）
+})
+
+import matplotlib.font_manager as fm
+# 打印所有可用字体（调试用）
+fonts = fm.findSystemFonts(fontpaths=None, fontext='ttf')
+for font in fonts:
+    try:
+        font_name = fm.FontProperties(fname=font).get_name()
+        print(font_name)
+    except:
+        pass
 
 # 对话历史存储
 conversation_history = []
@@ -30,6 +51,76 @@ print("🚪 输入 'exit' 或 'quit' 可退出程序\n")
 
 # 初始化COM环境
 pythoncom.CoInitialize()
+
+
+def process_and_validate_graph_data(graph_data):
+    """处理并验证图数据结构，适配使用name作为节点标识的格式"""
+    if not isinstance(graph_data, dict):
+        return False, "图数据不是有效的字典", None
+
+    # 确保nodes字段存在
+    if 'nodes' not in graph_data:
+        graph_data['nodes'] = []
+        print("警告：图数据中缺少nodes字段，已自动创建空节点列表")
+
+    # 处理节点 - 检查name属性（替代id作为标识）
+    node_names = []
+    for i, node in enumerate(graph_data['nodes']):
+        if not isinstance(node, dict):
+            print(f"警告：节点 {i} 不是有效的字典，已转换为字典")
+            graph_data['nodes'][i] = {"name": f"节点{i}", "type": "unknown"}
+            node = graph_data['nodes'][i]
+
+        # 检查name属性（替代id作为唯一标识）
+        if 'name' not in node:
+            generated_name = f"自动节点_{uuid.uuid4().hex[:8]}"
+            node['name'] = generated_name
+            print(f"警告：节点 {i} 缺少'name'属性，已自动生成: {generated_name}")
+
+        # 检查名称唯一性
+        if node['name'] in node_names:
+            original_name = node['name']
+            node['name'] = f"{original_name}_{uuid.uuid4().hex[:4]}"
+            print(f"警告：节点名称 '{original_name}' 重复，已重命名为: {node['name']}")
+
+        node_names.append(node['name'])
+
+        # 为缺少type的节点设置默认类型
+        if 'type' not in node:
+            node['type'] = 'unknown'
+            print(f"警告：节点 {node['name']} 缺少'type'属性，已设置为'unknown'")
+
+    # 验证并处理边（使用from和to替代source和target）
+    if 'edges' in graph_data:
+        valid_edges = []
+        for i, edge in enumerate(graph_data['edges']):
+            if not isinstance(edge, dict):
+                print(f"警告：边 {i} 不是有效的字典，已跳过")
+                continue
+
+            # 检查边的from和to（替代source和target）
+            if 'from' not in edge or 'to' not in edge:
+                print(f"警告：边 {i} 缺少'from'或'to'属性，已跳过")
+                continue
+
+            # 检查连接的节点是否存在
+            if edge['from'] not in node_names:
+                print(f"警告：边 {i} 的源节点 '{edge['from']}' 不存在，已跳过")
+                continue
+
+            if edge['to'] not in node_names:
+                print(f"警告：边 {i} 的目标节点 '{edge['to']}' 不存在，已跳过")
+                continue
+
+            valid_edges.append(edge)
+
+        graph_data['edges'] = valid_edges
+    else:
+        graph_data['edges'] = []
+        print("警告：图数据中缺少edges字段，已自动创建空边列表")
+
+    return True, "图数据处理完成", graph_data
+
 
 try:
     while True:
@@ -62,8 +153,19 @@ try:
 
             if graph_data:
                 print("✅ 成功解析有向图数据结构！")
+
+                # 处理并验证图数据
+                print("🔍 处理并验证图数据结构...")
+                is_valid, process_msg, processed_graph = process_and_validate_graph_data(graph_data)
+                if not is_valid:
+                    print(f"❌ 图数据结构无效: {process_msg}")
+                    print("请检查输入描述或API响应格式")
+                    continue
+
+                print(process_msg)
+                graph_data = processed_graph  # 使用处理后的图数据
+
                 print("🔄 检查容量为0的传送器节点...")
-                # 预处理：将容量为0的传送器转换为直接连接
                 graph_data = convert_zero_capacity_conveyors_to_edges(graph_data)
                 print("✅ 成功处理容量为0的传送器节点")
 
@@ -76,10 +178,8 @@ try:
                 visualizer.show_static(graph_data, title="生产线有向图可视化")  # <-- 显示图形
 
                 print("⏳ 正在生成Plant Simulation代码...")
-                # 生成两部分SimTalk代码
                 model_setup_code, data_writing_code = json_to_simtalk(graph_data)
 
-                # 打印生成的代码（调试用）
                 print("\n生成的模型建立代码:")
                 print(model_setup_code)
                 print("\n生成的数据写入代码:")
@@ -87,7 +187,6 @@ try:
                 print()
 
                 print("⏳ 正在创建Plant Simulation模型...")
-                # 分两步执行
                 if create_plant_simulation_model(model_setup_code, data_writing_code):
                     print("🎉 模型创建及数据处理成功！Plant Simulation即将启动...")
                 else:
