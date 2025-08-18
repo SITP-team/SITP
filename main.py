@@ -15,6 +15,8 @@ from json_utils import extract_json_from_response
 from graph_preprocessor import convert_zero_capacity_conveyors_to_edges
 from simtalk_generator import json_to_simtalk
 from plant_simulator import create_plant_simulation_model
+# 新增：导入可视化类
+from visualize import ProductionLineVisualizer  # <-- 新增导入
 
 from prompt_config import SYSTEM_PROMPT
 
@@ -67,6 +69,11 @@ try:
 
                 print("提取的JSON数据:")
                 print(json.dumps(graph_data, indent=2, ensure_ascii=False))
+
+                # 新增：可视化有向图
+                print("📊 正在可视化有向图...")  # <-- 新增提示
+                visualizer = ProductionLineVisualizer()  # <-- 实例化可视化工具
+                visualizer.show_static(graph_data, title="生产线有向图可视化")  # <-- 显示图形
 
                 print("⏳ 正在生成Plant Simulation代码...")
                 # 生成两部分SimTalk代码
