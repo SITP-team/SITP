@@ -3,8 +3,7 @@
 """
 Created on Thu Jul 17 12:33:39 2025
 @author: chunlongyu
-整合版本：支持故障、传送器、数据读写分离分离及容量0传送器处理
-重构版本：适配新的节点数据结构（使用name作为标识）
+
 """
 
 import time
@@ -29,6 +28,9 @@ print("📝 请输入您的生产线描述，我将自动生成Plant Simulation�
 print("💡 例如：源节点每10分钟生成一个产品，加工工位处理时间5分钟，缓冲区容量10...")
 print("🚪 输入 'exit' 或 'quit' 可退出程序\n")
 
+# 调试模式开关 - 设置为True可查看AI完整思考过程
+DEBUG_MODE = True
+
 # 初始化COM环境
 pythoncom.CoInitialize()
 try:
@@ -50,6 +52,11 @@ try:
             reply = result["choices"][0]["message"]["content"]
 
             conversation_history.append({"role": "assistant", "content": reply})
+
+            if DEBUG_MODE:
+                print("\nAI完整响应:")
+                print(reply)
+                print()
 
             print("🔍 提取模型数据结构...")
             graph_data = extract_json_from_response(reply)
