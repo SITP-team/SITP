@@ -27,7 +27,7 @@ print("💡 例如：源节点每10分钟生成一个产品，加工工位处理
 print("🚪 输入 'exit' 或 'quit' 可退出程序\n")
 
 # 调试模式开关 - 设置为True可查看AI完整思考过程
-DEBUG_MODE = True
+DEBUG_MODE = 1
 
 # 初始化COM环境
 pythoncom.CoInitialize()
@@ -61,11 +61,15 @@ try:
             graph_data = extract_json_from_response(reply)
 
             # 检查API回复是否是询问而不是JSON
-            if "?" in reply or "请" in reply or "需要" in reply or "缺少" in reply:
+            # 只有在无法提取JSON数据且确实包含询问内容时才认为是需要补充信息
+            if not graph_data and (
+                "?" in reply or "请" in reply or "需要" in reply or "缺少" in reply
+            ):
                 print("\n❓ 需要补充信息:")
                 print(reply)
                 continue  # 继续对话循环，等待用户回答
 
+            # 如果成功提取了JSON数据，即使回复中包含"需要"等词，也继续处理
             if graph_data:
                 print("✅ 成功解析有向图数据结构！")
                 print("🔄 检查容量为0的传送器节点...")
