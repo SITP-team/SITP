@@ -3,18 +3,20 @@
 """
 Created on Thu Jul 17 12:33:39 2025
 @author: chunlongyu
-整合版本：支持故障、传送器、数据读写分离及容量0传送器处理
-重构版本：模块化处理2（新增背景文档和示例库）
+
 """
 
 import time
 import json
+import uuid
 import pythoncom
 from api_utils import make_api_request
 from json_utils import extract_json_from_response
 from graph_preprocessor import convert_zero_capacity_conveyors_to_edges
 from simtalk_generator import json_to_simtalk
 from plant_simulator import create_plant_simulation_model
+# 新增：导入可视化类
+from visualize import ProductionLineVisualizer  # 导入可视化工具类
 
 from prompt_config import SYSTEM_PROMPT
 
@@ -31,7 +33,6 @@ DEBUG_MODE = True
 
 # 初始化COM环境
 pythoncom.CoInitialize()
-
 try:
     while True:
         user_input = input("👤 请输入生产线描述: ")
@@ -68,19 +69,37 @@ try:
 
             if graph_data:
                 print("✅ 成功解析有向图数据结构！")
+
+                # 处理并验证图数据
+                print("🔍 处理并验证图数据结构...")
+                is_valid, process_msg, processed_graph = ProductionLineVisualizer.process_and_validate_graph_data(
+                    graph_data)
+                if not is_valid:
+                    print(f"❌ 图数据结构无效: {process_msg}")
+                    print("请检查输入描述或API响应格式")
+                    continue
+
+                print(process_msg)
+                graph_data = processed_graph  # 使用处理后的图数据
+
                 print("🔄 检查容量为0的传送器节点...")
-                # 预处理：将容量为0的传送器转换为直接连接
                 graph_data = convert_zero_capacity_conveyors_to_edges(graph_data)
                 print("✅ 成功处理容量为0的传送器节点")
 
                 print("提取的JSON数据:")
                 print(json.dumps(graph_data, indent=2, ensure_ascii=False))
 
+                # 新增：初始化字体配置（生产环境可去掉print_fonts参数）
+                ProductionLineVisualizer.initialize_fonts(print_fonts=False)
+
+                # 新增：可视化有向图
+                print("📊 正在可视化有向图...")
+                visualizer = ProductionLineVisualizer()
+                visualizer.show_static(graph_data, title="生产线有向图可视化")
+
                 print("⏳ 正在生成Plant Simulation代码...")
-                # 生成两部分SimTalk代码
                 model_setup_code, data_writing_code = json_to_simtalk(graph_data)
 
-                # 打印生成的代码（调试用）
                 print("\n生成的模型建立代码:")
                 print(model_setup_code)
                 print("\n生成的数据写入代码:")
@@ -88,7 +107,6 @@ try:
                 print()
 
                 print("⏳ 正在创建Plant Simulation模型...")
-                # 分两步执行
                 if create_plant_simulation_model(model_setup_code, data_writing_code):
                     print("🎉 模型创建及数据处理成功！Plant Simulation即将启动...")
                 else:
