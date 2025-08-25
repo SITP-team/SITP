@@ -15,10 +15,14 @@ from json_utils import extract_json_from_response
 from graph_preprocessor import convert_zero_capacity_conveyors_to_edges
 from simtalk_generator import json_to_simtalk
 from plant_simulator import create_plant_simulation_model
+
 # 新增：导入可视化类
 from visualize import ProductionLineVisualizer  # 导入可视化工具类
 
 from dynamic_prompt import DynamicPromptGenerator
+
+# 新增：导入标准化处理模块
+from standardization import standardize_text
 
 # 对话历史存储
 conversation_history = []
@@ -41,8 +45,20 @@ try:
             print("👋 再见！")
             break
 
-        conversation_history.append({"role": "user", "content": user_input})
-        dynamic_prompt = prompt_generator.generate_dynamic_prompt(user_input)
+        # 先进行文本标准化处理
+        print("🔄 正在进行文本标准化处理...")
+        standardized_text = standardize_text(user_input)
+
+        if standardized_text:
+            print("✅ 文本标准化完成！")
+            print(f"标准化后的文本: {standardized_text}")
+            processed_text = standardized_text
+        else:
+            print("⚠️  标准化处理失败，使用原始文本")
+            processed_text = user_input
+
+        conversation_history.append({"role": "user", "content": processed_text})
+        dynamic_prompt = prompt_generator.generate_dynamic_prompt(processed_text)
         print(dynamic_prompt)
 
         # 构造请求消息
@@ -79,8 +95,9 @@ try:
 
                 # 处理并验证图数据
                 print("🔍 处理并验证图数据结构...")
-                is_valid, process_msg, processed_graph = ProductionLineVisualizer.process_and_validate_graph_data(
-                    graph_data)
+                is_valid, process_msg, processed_graph = (
+                    ProductionLineVisualizer.process_and_validate_graph_data(graph_data)
+                )
                 if not is_valid:
                     print(f"❌ 图数据结构无效: {process_msg}")
                     print("请检查输入描述或API响应格式")
