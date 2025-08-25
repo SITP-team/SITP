@@ -275,7 +275,6 @@ def json_to_simtalk(json_data):
     model_setup.append("")  # 空行分隔
 
     # 4. 事件控制器设置
-    model_setup.append(".模型.模型.事件控制器.start")
     model_setup.append(f".模型.模型.事件控制器.end := {source_stop_time}")
     model_setup.append(".模型.模型.事件控制器.startwithoutanimation")
 
