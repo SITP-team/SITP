@@ -18,7 +18,11 @@ from plant_simulator import create_plant_simulation_model
 from visualize import ProductionLineVisualizer
 from visualization_confirm import visualize_and_confirm
 
+
 from dynamic_prompt import DynamicPromptGenerator
+
+# 新增：导入标准化处理模块
+from standardization import standardize_text
 
 # 对话历史存储
 conversation_history = []
@@ -40,6 +44,18 @@ try:
         if user_input.strip().lower() in ["exit", "quit"]:
             print("👋 再见！")
             break
+
+        # 先进行文本标准化处理
+        print("🔄 正在进行文本标准化处理...")
+        standardized_text = standardize_text(user_input)
+
+        if standardized_text:
+            print("✅ 文本标准化完成！")
+            print(f"标准化后的文本: {standardized_text}")
+            processed_text = standardized_text
+        else:
+            print("⚠️  标准化处理失败，使用原始文本")
+            processed_text = user_input
 
         # 创建循环用于支持用户确认流程
         confirmed = False
