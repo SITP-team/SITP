@@ -18,7 +18,7 @@ from plant_simulator import create_plant_simulation_model
 # 新增：导入可视化类
 from visualize import ProductionLineVisualizer  # 导入可视化工具类
 
-from prompt_config import SYSTEM_PROMPT
+from dynamic_prompt import DynamicPromptGenerator
 
 # 对话历史存储
 conversation_history = []
@@ -35,15 +35,18 @@ DEBUG_MODE = 1
 pythoncom.CoInitialize()
 try:
     while True:
+        prompt_generator = DynamicPromptGenerator()
         user_input = input("👤 请输入生产线描述: ")
         if user_input.strip().lower() in ["exit", "quit"]:
             print("👋 再见！")
             break
 
         conversation_history.append({"role": "user", "content": user_input})
+        dynamic_prompt = prompt_generator.generate_dynamic_prompt(user_input)
+        print(dynamic_prompt)
 
         # 构造请求消息
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages = [{"role": "system", "content": dynamic_prompt}]
         messages.extend(conversation_history)
 
         try:
