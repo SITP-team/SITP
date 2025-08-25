@@ -13,10 +13,62 @@ def json_to_simtalk(json_data):
 
     # 第一部分：模型建立（实体创建、属性设置、连接、事件控制）
     model_setup = []
-    x_pos = 50  # 初始x坐标
-    y_pos = 200  # 统一y坐标
-    material_end_y = 200  # 物料终结节点y坐标起始值
-    conveyer_y = 250  # 传送器y坐标起始值
+
+    # 计算节点坐标（根据边的连接顺序）
+    # 1. 构建节点连接关系
+    node_connections = {node["name"]: {"outgoing": [], "incoming": 0} for node in nodes}
+    for edge in edges:
+        node_connections[edge["from"]]["outgoing"].append(edge["to"])
+        node_connections[edge["to"]]["incoming"] += 1
+
+    # 2. 确定节点顺序（拓扑排序）
+    node_order = []
+    # 找到所有入度为0的节点作为起点
+    start_nodes = [name for name, conn in node_connections.items() if conn["incoming"] == 0]
+    # 使用队列处理节点顺序
+    from collections import deque
+    queue = deque(start_nodes)
+
+    while queue:
+        current = queue.popleft()
+        node_order.append(current)
+        # 处理下游节点
+        for neighbor in node_connections[current]["outgoing"]:
+            node_connections[neighbor]["incoming"] -= 1
+            if node_connections[neighbor]["incoming"] == 0:
+                queue.append(neighbor)
+
+    # 3. 计算坐标
+    node_positions = {}
+    base_x = 50  # 基础X坐标
+    base_y = 200  # 基础Y坐标
+    x_step = 100  # X方向步长
+    y_branch_step = 50  # 分支Y方向步长
+
+    for idx, node_name in enumerate(node_order):
+        # 计算X坐标（按顺序递增）
+        x_pos = base_x + idx * x_step
+
+        # 计算Y坐标
+        # 找到父节点
+        parent_nodes = [edge["from"] for edge in edges if edge["to"] == node_name]
+        if not parent_nodes:  # 起始节点
+            y_pos = base_y
+        else:
+            parent_name = parent_nodes[0]
+            parent_y = node_positions[parent_name]["y"]
+            # 检查父节点的子节点数量
+            siblings = node_connections[parent_name]["outgoing"]
+            if len(siblings) <= 1:
+                y_pos = parent_y
+            else:
+                # 有多个分支，计算偏移
+                sibling_idx = siblings.index(node_name)
+                # 居中偏移计算（确保分支对称）
+                mid = (len(siblings) - 1) / 2
+                y_pos = parent_y + (sibling_idx - mid) * y_branch_step
+
+        node_positions[node_name] = {"x": x_pos, "y": y_pos}
 
     # 提取源节点的时间属性（用于故障设置）
     source_start_time = "0:0:0:0"
@@ -30,10 +82,14 @@ def json_to_simtalk(json_data):
                 source_stop_time = time_data["stop_time"]
             break
 
-    # 1. 创建实体（按节点顺序）
+    # 1. 创建实体（按计算的坐标）
     for node in nodes:
         node_type = node["type"]
         node_name = node["name"]
+        pos = node_positions[node_name]
+        x_pos = pos["x"]
+        y_pos = pos["y"]
+
         if node_type == "源":
             model_setup.append(
                 f'.物料流.源.createObject(.模型.模型, {x_pos}, {y_pos}, "{node_name}")'
@@ -48,19 +104,16 @@ def json_to_simtalk(json_data):
             )
         elif node_type == "传送器":
             model_setup.append(
-                f'.物料流.传送器.createObject(.模型.模型, {x_pos}, {conveyer_y}, "{node_name}")'
+                f'.物料流.传送器.createObject(.模型.模型, {x_pos}, {y_pos}, "{node_name}")'
             )
-            conveyer_y += 50  # 传送器节点y坐标递增
         elif node_type == "物料终结":
             model_setup.append(
-                f'.物料流.物料终结.createObject(.模型.模型, 300, {material_end_y}, "{node_name}")'
+                f'.物料流.物料终结.createObject(.模型.模型, {x_pos}, {y_pos}, "{node_name}")'
             )
-            material_end_y += 50  # 物料终结节点y坐标递增
-        x_pos += 50  # 每个实体x坐标递增
 
     model_setup.append("")  # 空行分隔
 
-    # 2. 设置实体属性
+    # 2. 设置实体属性（保持原有逻辑）
     for node in nodes:
         node_name = node["name"]
         node_type = node["type"]
@@ -73,75 +126,60 @@ def json_to_simtalk(json_data):
                     time_value = time_data[time_type]
                     simtalk_property = time_type.replace("_time", "")
 
-                    # 核心修改：仅当是字典且包含"distribution_pattern"时，才使用setParam
                     if (
-                        isinstance(time_value, dict)
-                        and "distribution_pattern" in time_value
+                            isinstance(time_value, dict)
+                            and "distribution_pattern" in time_value
                     ):
-                        # 分布类型：使用setParam和format_time_value处理
                         formatted_value = format_time_value(time_value)
                         model_setup.append(
                             f".模型.模型.{node_name}.{simtalk_property}.setParam({formatted_value})"
                         )
                     else:
-                        # 常数类型（包括时间字符串、数字等）：直接赋值
                         model_setup.append(
                             f".模型.模型.{node_name}.{simtalk_property} := {time_value}"
                         )
 
-        # 处理工位节点
         elif node_type == "工位":
-            # 处理加工时间
             if "time" in data and "processing_time" in data["time"]:
                 proc_time = data["time"]["processing_time"]
-                # 仅当是包含distribution_pattern的字典时，才使用setParam
                 if isinstance(proc_time, dict) and "distribution_pattern" in proc_time:
-                    # 使用setParam设置分布参数
                     formatted_value = format_time_value(proc_time)
                     model_setup.append(
                         f".模型.模型.{node_name}.ProcTime.setParam({formatted_value})"
                     )
                 else:
-                    # 其他情况（时间字符串、数字等常数）直接赋值
                     model_setup.append(
                         f".模型.模型.{node_name}.ProcTime := {proc_time}"
                     )
 
-            # 处理故障
             if "failure" in data:
                 failure_data = data["failure"]
                 failure_name = failure_data.get("failure_name", "default_failure")
                 failure_start = failure_data.get("start_time", source_start_time)
                 failure_stop = failure_data.get("stop_time", source_stop_time)
 
-                # 处理间隔时间（移除多余引号）
                 interval_time = failure_data.get("interval_time")
                 if (
-                    isinstance(interval_time, dict)
-                    and "distribution_pattern" in interval_time
+                        isinstance(interval_time, dict)
+                        and "distribution_pattern" in interval_time
                 ):
-                    # 先格式化再移除内部引号，最后添加正确的外层引号
                     formatted = format_time_value(interval_time)
-                    # 关键处理：替换掉分布类型自带的引号
-                    cleaned = formatted.replace('"', "")  # 去除所有引号
-                    interval_str = f'"{cleaned}"'  # 重新添加外层引号
+                    cleaned = formatted.replace('"', "")
+                    interval_str = f'"{cleaned}"'
                 else:
                     interval_str = str(interval_time)
 
-                # 处理持续时间（移除多余引号）
                 duration_time = failure_data.get("duration_time", "0:0:0:0")
                 if (
-                    isinstance(duration_time, dict)
-                    and "distribution_pattern" in duration_time
+                        isinstance(duration_time, dict)
+                        and "distribution_pattern" in duration_time
                 ):
-                    # 同样的处理逻辑
                     formatted = format_time_value(duration_time)
-                    cleaned = formatted.replace('"', "")  # 去除所有引号
-                    duration_str = f'"{cleaned}"'  # 重新添加外层引号
+                    cleaned = formatted.replace('"', "")
+                    duration_str = f'"{cleaned}"'
                 else:
                     duration_str = str(duration_time)
 
-                # 生成最终的SimTalk代码
                 model_setup.append(
                     f'.模型.模型.{node_name}.Failures.createFailure("{failure_name}", {interval_str}, {duration_str}, "SimulationTime", {failure_start}, {failure_stop}, false)'
                 )
@@ -149,7 +187,6 @@ def json_to_simtalk(json_data):
                     f".模型.模型.{node_name}.Failures.{failure_name}.Active := true"
                 )
 
-            # 处理百分比分配
             if "production_status" in data:
                 qualified = int(data["production_status"]["qualified"] * 100)
                 unqualified = int(data["production_status"]["unqualified"] * 100)
@@ -163,11 +200,9 @@ def json_to_simtalk(json_data):
                     f".模型.模型.{node_name}.exitstrategypercentagevalues := [{qualified}, {unqualified}]"
                 )
 
-        # 处理缓冲区节点
         elif node_type == "缓冲区" and "capacity" in data:
             model_setup.append(f'.模型.模型.{node_name}.capacity := {data["capacity"]}')
 
-        # 处理传送器节点
         elif node_type == "传送器":
             if "capacity" in data:
                 model_setup.append(
@@ -182,54 +217,44 @@ def json_to_simtalk(json_data):
             if "speed" in data:
                 model_setup.append(f'.模型.模型.{node_name}.speed := {data["speed"]}')
 
-        # 处理物料终结节点
         elif node_type == "物料终结":
-            # 处理加工时间
             if "time" in data and "processing_time" in data["time"]:
                 proc_time = data["time"]["processing_time"]
-                # 仅当是包含distribution_pattern的字典时，才使用setParam
                 if isinstance(proc_time, dict) and "distribution_pattern" in proc_time:
-                    # 使用setParam设置分布参数
                     formatted_value = format_time_value(proc_time)
                     model_setup.append(
                         f".模型.模型.{node_name}.ProcTime.setParam({formatted_value})"
                     )
                 else:
-                    # 其他情况（时间字符串、数字等常数）直接赋值
                     model_setup.append(
                         f".模型.模型.{node_name}.ProcTime := {proc_time}"
                     )
 
-            # 处理故障
             if "failure" in data:
                 failure_data = data["failure"]
                 failure_name = failure_data.get("failure_name", "default_failure")
                 failure_start = failure_data.get("start_time", source_start_time)
                 failure_stop = failure_data.get("stop_time", source_stop_time)
-                # 处理间隔时间（移除多余引号）
                 interval_time = failure_data.get("interval_time")
                 if (
-                    isinstance(interval_time, dict)
-                    and "distribution_pattern" in interval_time
+                        isinstance(interval_time, dict)
+                        and "distribution_pattern" in interval_time
                 ):
-                    # 先格式化再移除内部引号，最后添加正确的外层引号
                     formatted = format_time_value(interval_time)
-                    cleaned = formatted.replace('"', "")  # 去除所有引号
-                    interval_str = f'"{cleaned}"'  # 重新添加外层引号
+                    cleaned = formatted.replace('"', "")
+                    interval_str = f'"{cleaned}"'
                 else:
                     interval_str = str(interval_time)
-                # 处理持续时间（移除多余引号）
                 duration_time = failure_data.get("duration_time", "0:0:0:0")
                 if (
-                    isinstance(duration_time, dict)
-                    and "distribution_pattern" in duration_time
+                        isinstance(duration_time, dict)
+                        and "distribution_pattern" in duration_time
                 ):
                     formatted = format_time_value(duration_time)
-                    cleaned = formatted.replace('"', "")  # 去除所有引号
-                    duration_str = f'"{cleaned}"'  # 重新添加外层引号
+                    cleaned = formatted.replace('"', "")
+                    duration_str = f'"{cleaned}"'
                 else:
                     duration_str = str(duration_time)
-                # 生成最终的SimTalk代码
                 model_setup.append(
                     f'.模型.模型.{node_name}.Failures.createFailure("{failure_name}", {interval_str}, {duration_str}, "SimulationTime", {failure_start}, {failure_stop}, false)'
                 )
@@ -256,7 +281,6 @@ def json_to_simtalk(json_data):
 
     # 第二部分：数据写入（独立执行）
     data_writing = []
-    # 创建数据表实体
     data_writing.append('.信息流.数据表.createObject(.模型.模型, 350, 200, "数据表")')
     data_writing.append("")
 
@@ -264,10 +288,8 @@ def json_to_simtalk(json_data):
     for node in nodes:
         if node["type"] == "物料终结":
             node_name = node["name"]
-            # 写入物料终结名称（每个物料终结前添加）
             data_writing.append(f'.模型.模型.数据表[1, {row}] := "{node_name}"')
             row += 1
-            # 写入四个属性数据
             data_writing.append(f'.模型.模型.数据表[1, {row}] := "平均寿命"')
             data_writing.append(
                 f".模型.模型.数据表[2, {row}] := To_str(.模型.模型.{node_name}.statavglifespan)"
@@ -289,7 +311,6 @@ def json_to_simtalk(json_data):
             )
             row += 2  # 不同物料终结间空一行
 
-    # 数据表写入Excel
     data_writing.append(r'.模型.模型.数据表.writefile("data_output.txt")')
 
     return "\n".join(model_setup), "\n".join(data_writing)
