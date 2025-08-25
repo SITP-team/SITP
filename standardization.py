@@ -54,7 +54,8 @@ def standardize_text(raw_text: str, max_attempts: int = 3) -> Optional[str]:
 
             result = response["choices"][0]["message"]["content"]
 
-            # 检查是否为询问补充信息（扩展关键词）
+            # 检查是否为真正的信息缺失询问（而不是AI的思考过程）
+            # 更精确的检测逻辑：检查是否包含明确的询问句式，而不是简单的关键词
             check_phrases = [
                 "需要补充",
                 "缺失",
@@ -65,7 +66,27 @@ def standardize_text(raw_text: str, max_attempts: int = 3) -> Optional[str]:
                 "不完整",
                 "请详细描述",
             ]
-            if any(phrase in result for phrase in check_phrases):
+
+            # 排除思考过程中的描述性关键词
+            exclude_phrases = [
+                "思考过程",
+                "标准化输出",
+                "示例输出",
+                "流程顺序为",
+                "术语标准化",
+                "消除模糊表述",
+                "检查信息完整性",
+            ]
+
+            # 检测是否为真正的询问：包含询问关键词但不包含思考过程描述
+            has_inquiry = any(phrase in result for phrase in check_phrases)
+            is_thought_process = (
+                any(phrase in result for phrase in exclude_phrases)
+                or "### 思考过程：" in result
+            )
+
+            # 只有当包含询问关键词且不是思考过程时才要求补充信息
+            if has_inquiry and not is_thought_process:
                 print("标准化过程需要补充信息:")
                 print(result)
                 # 记录完整对话到上下文
