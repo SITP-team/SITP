@@ -47,7 +47,7 @@ SYSTEM_PROMPT = """
       "distribution_pattern": "normal",
       "parameters": {
         "mean": 200,
-        "sigma": 20
+        "sigma": 900
       }
     }
   - 均匀分布 "uniform"：参数为下界"lower_bound"和上界"upper_bound"
