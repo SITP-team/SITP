@@ -11,6 +11,7 @@ from dataclasses import dataclass
 @dataclass
 class BackgroundModule:
     """背景文档模块数据类"""
+
     name: str
     content: str
     version: str = "1.0.0"
@@ -24,9 +25,11 @@ class BackgroundModule:
 class DynamicPromptGenerator:
     """动态提示词生成器，完全替代prompt_config.py的功能"""
 
-    def __init__(self,
-                 background_doc_path: str = "background document.md",
-                 sample_lib_path: str = "sample library.md"):
+    def __init__(
+        self,
+        background_doc_path: str = "background document.md",
+        sample_lib_path: str = "sample library.md",
+    ):
         self.background_modules = self._parse_background_document(background_doc_path)
         self.sample_library = self._parse_sample_library(sample_lib_path)
 
@@ -39,7 +42,7 @@ class DynamicPromptGenerator:
             return modules
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
             # 使用更精确的正则表达式提取JSON对象
@@ -50,7 +53,7 @@ class DynamicPromptGenerator:
                 try:
                     # 清理JSON字符串
                     clean_json = match.strip()
-                    if not clean_json.startswith('{'):
+                    if not clean_json.startswith("{"):
                         continue
 
                     module_data = json.loads(clean_json)
@@ -60,14 +63,16 @@ class DynamicPromptGenerator:
                         # 提取内容
                         module_content = module_data.get("content", "")
                         if isinstance(module_content, dict):
-                            module_content = json.dumps(module_content, ensure_ascii=False, indent=2)
+                            module_content = json.dumps(
+                                module_content, ensure_ascii=False, indent=2
+                            )
 
                         # 创建模块对象
                         module = BackgroundModule(
                             name=module_name,
                             content=module_content,
                             version=module_data.get("version", "1.0.0"),
-                            dependencies=module_data.get("dependencies", [])
+                            dependencies=module_data.get("dependencies", []),
                         )
 
                         modules[module_name] = module
@@ -89,11 +94,11 @@ class DynamicPromptGenerator:
             return examples
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
             # 提取JSON示例
-            json_pattern = r'```json\s*(\{.*?\})\s*```'
+            json_pattern = r"```json\s*(\{.*?\})\s*```"
             matches = re.findall(json_pattern, content, re.DOTALL)
 
             for match in matches:
@@ -108,12 +113,14 @@ class DynamicPromptGenerator:
 
         return examples
 
-    def _find_relevant_examples(self, user_input: str, max_examples: int = 2) -> List[Dict]:
+    def _find_relevant_examples(
+        self, user_input: str, max_examples: int = 2
+    ) -> List[Dict]:
         """查找与用户输入相关的示例"""
         relevant_examples = []
 
         # 简单关键词匹配
-        keywords = re.findall(r'\b\w+\b', user_input.lower())
+        keywords = re.findall(r"\b\w+\b", user_input.lower())
 
         for example in self.sample_library:
             # 检查示例名称和描述中是否包含关键词
@@ -145,7 +152,12 @@ class DynamicPromptGenerator:
     def _identify_relevant_modules(self, user_input: str) -> List[str]:
         """识别与用户输入相关的模块"""
         # 始终包含的核心模块
-        relevant_modules = ["core_rules", "role_definition", "node_types", "time_formats"]
+        relevant_modules = [
+            "core_rules",
+            "role_definition",
+            "node_types",
+            "time_formats",
+        ]
 
         # 根据关键词添加相关模块
         keyword_mapping = {
@@ -160,7 +172,7 @@ class DynamicPromptGenerator:
             "边": "connection_rules",
             "完整性": "data_integrity",
             "缺少": "data_integrity",
-            "缺失": "data_integrity"
+            "缺失": "data_integrity",
         }
 
         # 检查用户输入中的关键词
@@ -182,10 +194,13 @@ class DynamicPromptGenerator:
         prompt_parts = []
 
         # 1. 角色定义和核心任务
-        role_definition = self._get_module_content("role_definition") or """
+        role_definition = (
+            self._get_module_content("role_definition")
+            or """
 你是一个格式转换专家，擅长将自然语言转换为规定格式的有向图。根据输入的自然语言描述和后续的补充回答，
 你需要提取出图中的节点（nodes）和边（edges）信息，并按照指定的JSON格式输出，以便于后续代码生成。
 """
+        )
         prompt_parts.append(role_definition)
 
         # 2. 添加相关模块的内容
@@ -196,7 +211,8 @@ class DynamicPromptGenerator:
                 prompt_parts.append(content)
 
         # 3. 添加输出格式要求
-        prompt_parts.append("""
+        prompt_parts.append(
+            """
 # 输出要求:
 - 输出必须为严格的JSON格式，不包含任何额外说明或XML标签
 - 所有字段的时间格式在未选择分布的情况下为"天:小时:分钟:秒"
@@ -212,7 +228,8 @@ class DynamicPromptGenerator:
 4. 禁止过度提问（如长度单位等，这些在有向图中无用的数据），只需保证数据能够生成有向图即可。
 5. 将用户的所有回答相结合生成有向图。
 6. 若用户仍然未给出一些不影响有向图生成的数据，不要默认其值为0，尤其是传送器的宽度和速度。
-""")
+"""
+        )
 
         # 4. 添加相关示例
         if relevant_examples:
@@ -221,13 +238,16 @@ class DynamicPromptGenerator:
                 prompt_parts.append(f"\n示例 {i}: {example.get('name', '未命名示例')}")
                 prompt_parts.append(f"描述: {example.get('description', '无描述')}")
 
-                graph_data = example.get('graph', {})
+                graph_data = example.get("graph", {})
                 if graph_data:
                     prompt_parts.append("有向图结构:")
-                    prompt_parts.append(json.dumps(graph_data, ensure_ascii=False, indent=2))
+                    prompt_parts.append(
+                        json.dumps(graph_data, ensure_ascii=False, indent=2)
+                    )
 
         # 5. 添加完整示例（来自prompt_config.py）
-        prompt_parts.append("""
+        prompt_parts.append(
+            """
 # 完整输入输出示例:
 
 示例输入: 为我生成一个有向图，节点包括源（源），缓冲区，加工工位（工位），传送器（传送器），测试工位（工位），合格库存（物料终结）和废品库存（物料终结），
@@ -266,7 +286,7 @@ class DynamicPromptGenerator:
                         "distribution_pattern": "normal",
                         "parameters": {
                             "mean": 200,
-                            "sigma": 900
+                            "sigma": 30
                         }
                     }
                 },
@@ -339,7 +359,8 @@ class DynamicPromptGenerator:
         {"from":"测试工位", "to":"废品库存"}
     ]
 }
-""")
+"""
+        )
 
         return "\n".join(prompt_parts)
 
@@ -353,7 +374,7 @@ if __name__ == "__main__":
     test_inputs = [
         "我想建一个简单的生产线，有一个源节点每5分钟生成一个产品，一个加工工位处理时间3分钟，最后送到成品仓库",
         "我需要一个有故障模型的生产线，源节点每10分钟生成一个产品，加工工位处理时间正态分布，平均值200秒，标准差30秒，故障间隔2000秒",
-        "请帮我设计一个带传送带的生产线，源节点每15分钟生成产品，装配工位处理8分钟，传送带长度10米，速度0.5m/s，容量5个"
+        "请帮我设计一个带传送带的生产线，源节点每15分钟生成产品，装配工位处理8分钟，传送带长度10米，速度0.5m/s，容量5个",
     ]
 
     for i, user_input in enumerate(test_inputs, 1):

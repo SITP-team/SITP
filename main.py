@@ -86,7 +86,7 @@ try:
 
                 # 检查API回复是否是询问而不是JSON
                 if not graph_data and (
-                        "?" in reply or "请" in reply or "需要" in reply or "缺少" in reply
+                    "?" in reply or "请" in reply or "需要" in reply or "缺少" in reply
                 ):
                     print("\n❓ 需要补充信息:")
                     print(reply)
@@ -100,8 +100,11 @@ try:
 
                     # 处理并验证图数据
                     print("🔍 处理并验证图数据结构...")
-                    is_valid, process_msg, processed_graph = ProductionLineVisualizer.process_and_validate_graph_data(
-                        graph_data)
+                    is_valid, process_msg, processed_graph = (
+                        ProductionLineVisualizer.process_and_validate_graph_data(
+                            graph_data
+                        )
+                    )
                     if not is_valid:
                         print(f"❌ 图数据结构无效: {process_msg}")
                         print("请检查输入描述或API响应格式")
@@ -122,7 +125,9 @@ try:
 
                     # 替换原有可视化代码为确认流程
                     print("📊 正在可视化并确认有向图...")
-                    confirmed, current_graph = visualize_and_confirm(graph_data, conversation_history)
+                    confirmed, current_graph = visualize_and_confirm(
+                        graph_data, conversation_history
+                    )
 
                     if not confirmed:
                         # 获取用户最新修改意见
