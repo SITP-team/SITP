@@ -280,7 +280,7 @@ def json_to_simtalk(json_data):
 
     # 第二部分：数据写入（独立执行）
     data_writing = []
-    data_writing.append('.信息流.数据表.createObject(.模型.模型, 350, 200, "数据表")')
+    data_writing.append('.信息流.数据表.createObject(.模型.模型, 100, 250, "数据表")')
     data_writing.append("")
 
     row = 1  # 数据表起始行
@@ -312,4 +312,24 @@ def json_to_simtalk(json_data):
 
     data_writing.append(r'.模型.模型.数据表.writefile("data_output.txt")')
 
+    return "\n".join(model_setup), "\n".join(data_writing)
+
+def capacity_json_to_simtalk(json_data):
+
+    model_setup=[]
+    nodes = json_data.get("nodes", [])
+
+    for node in nodes:
+        node_name = node["name"]
+        node_type = node["type"]
+        data = node.get("data", {})
+        model_setup.append(f".模型.模型.{node_name}.capacity:={data['capacity']}")
+
+        data_writing = [
+            '.信息流.数据表.createObject(.模型.模型, 100, 250, "数据表")',
+            '.模型.模型.数据表[1, 1] := "总吞吐量"',
+            '.模型.模型.数据表[2, 1] := To_str(.模型.模型.OP130.statdeleted)',
+            r'.模型.模型.数据表.writefile("data_output.txt")',
+            'sleep(3)'
+        ]
     return "\n".join(model_setup), "\n".join(data_writing)

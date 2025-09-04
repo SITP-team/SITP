@@ -1,0 +1,580 @@
+{
+  "nodes": [
+    {
+      "name": "OP10",
+      "type": "源",
+      "data": {
+        "time": {
+          "interval_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 54,
+              "sigma": 7
+            }
+          },
+          "start_time": "0",
+          "stop_time": "2592000"
+        }
+      }
+    },
+    {
+      "name": "B1",
+      "type": "缓冲区",
+      "data": {
+        "capacity": 0
+      }
+    },
+    {
+      "name": "L1",
+      "type": "传送器",
+      "data": {
+        "capacity": 1,
+        "length": 1.3,
+        "width": 1,
+        "speed": 1
+      }
+    },
+    {
+      "name": "OP20",
+      "type": "工位",
+      "data": {
+        "time": {
+          "processing_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 73,
+              "sigma": 4
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "B2",
+      "type": "缓冲区",
+      "data": {
+        "capacity": 1
+      }
+    },
+    {
+      "name": "L2",
+      "type": "传送器",
+      "data": {
+        "capacity": 1,
+        "length": 0.9,
+        "width": 1,
+        "speed": 1
+      }
+    },
+    {
+      "name": "OP30",
+      "type": "工位",
+      "data": {
+        "time": {
+          "processing_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 75,
+              "sigma": 6
+            }
+          }
+        },
+        "failure": {
+          "failure_name": "failure_OP30",
+          "interval_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 2000
+            }
+          },
+          "duration_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 200
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "B3",
+      "type": "缓冲区",
+      "data": {
+        "capacity":4
+      }
+    },
+    {
+      "name": "L3",
+      "type": "传送器",
+      "data": {
+        "capacity": 3,
+        "length": 2.6,
+        "width": 1,
+        "speed": 1
+      }
+    },
+    {
+      "name": "OP40",
+      "type": "工位",
+      "data": {
+        "time": {
+          "processing_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 73.5,
+              "sigma": 8
+            }
+          }
+        },
+        "failure": {
+          "failure_name": "failure_OP40",
+          "interval_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 6000
+            }
+          },
+          "duration_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 100
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "B4",
+      "type": "缓冲区",
+      "data": {
+        "capacity": 0
+      }
+    },
+    {
+      "name": "L4",
+      "type": "传送器",
+      "data": {
+        "capacity": 2,
+        "length": 1.9,
+        "width": 1,
+        "speed": 1
+      }
+    },
+    {
+      "name": "OP50",
+      "type": "工位",
+      "data": {
+        "time": {
+          "processing_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 52,
+              "sigma": 5
+            }
+          }
+        },
+        "failure": {
+          "failure_name": "failure_OP50",
+          "interval_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 2000
+            }
+          },
+          "duration_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 200
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "B5",
+      "type": "缓冲区",
+      "data": {
+        "capacity": 2
+      }
+    },
+    {
+      "name": "L5",
+      "type": "传送器",
+      "data": {
+        "capacity": 1,
+        "length": 0.9,
+        "width": 1,
+        "speed": 1
+      }
+    },
+    {
+      "name": "OP60",
+      "type": "工位",
+      "data": {
+        "time": {
+          "processing_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 67,
+              "sigma": 8
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "B6",
+      "type": "缓冲区",
+      "data": {
+        "capacity": 3
+      }
+    },
+    {
+      "name": "OP70",
+      "type": "工位",
+      "data": {
+        "time": {
+          "processing_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 56,
+              "sigma": 9
+            }
+          }
+        },
+        "failure": {
+          "failure_name": "failure_OP70",
+          "interval_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 3000
+            }
+          },
+          "duration_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 300
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "B7",
+      "type": "缓冲区",
+      "data": {
+        "capacity": 1
+      }
+    },
+    {
+      "name": "OP80",
+      "type": "工位",
+      "data": {
+        "time": {
+          "processing_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 34,
+              "sigma": 5
+            }
+          }
+        },
+        "failure": {
+          "failure_name": "failure_OP80",
+          "interval_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 1200
+            }
+          },
+          "duration_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 200
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "B8",
+      "type": "缓冲区",
+      "data": {
+        "capacity": 2
+      }
+    },
+    {
+      "name": "L8",
+      "type": "传送器",
+      "data": {
+        "capacity": 2,
+        "length": 2.3,
+        "width": 1,
+        "speed": 1
+      }
+    },
+    {
+      "name": "OP90",
+      "type": "工位",
+      "data": {
+        "time": {
+          "processing_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 52,
+              "sigma": 8
+            }
+          }
+        },
+        "failure": {
+          "failure_name": "failure_OP90",
+          "interval_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 3000
+            }
+          },
+          "duration_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 100
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "B9",
+      "type": "缓冲区",
+      "data": {
+        "capacity": 1
+      }
+    },
+    {
+      "name": "L9",
+      "type": "传送器",
+      "data": {
+        "capacity": 2,
+        "length": 2.3,
+        "width": 1,
+        "speed": 1
+      }
+    },
+    {
+      "name": "OP100",
+      "type": "工位",
+      "data": {
+        "time": {
+          "processing_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 66,
+              "sigma": 7
+            }
+          }
+        },
+        "failure": {
+          "failure_name": "failure_OP100",
+          "interval_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 1200
+            }
+          },
+          "duration_time": {
+            "distribution_pattern": "negexp",
+            "parameters": {
+              "mean": 240
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "B10",
+      "type": "缓冲区",
+      "data": {
+        "capacity": 2
+      }
+    },
+    {
+      "name": "L10",
+      "type": "传送器",
+      "data": {
+        "capacity": 1,
+        "length": 1.0,
+        "width": 1,
+        "speed": 1
+      }
+    },
+    {
+      "name": "OP130",
+      "type": "物料终结",
+      "data": {
+        "time": {
+          "processing_time": {
+            "distribution_pattern": "normal",
+            "parameters": {
+              "mean": 50,
+              "sigma": 3
+            }
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "OP10",
+      "to": "B1"
+    },
+    {
+      "from": "B1",
+      "to": "L1"
+    },
+    {
+      "from": "L1",
+      "to": "OP20"
+    },
+    {
+      "from": "OP20",
+      "to": "B2"
+    },
+    {
+      "from": "B2",
+      "to": "L2"
+    },
+    {
+      "from": "L2",
+      "to": "OP30"
+    },
+    {
+      "from": "OP30",
+      "to": "B3"
+    },
+    {
+      "from": "B3",
+      "to": "L3"
+    },
+    {
+      "from": "L3",
+      "to": "OP40"
+    },
+    {
+      "from": "OP40",
+      "to": "B4"
+    },
+    {
+      "from": "B4",
+      "to": "L4"
+    },
+    {
+      "from": "L4",
+      "to": "OP50"
+    },
+    {
+      "from": "OP50",
+      "to": "B5"
+    },
+    {
+      "from": "B5",
+      "to": "L5"
+    },
+    {
+      "from": "L5",
+      "to": "OP60"
+    },
+    {
+      "from": "OP60",
+      "to": "B6"
+    },
+    {
+      "from": "OP70",
+      "to": "B7"
+    },
+    {
+      "from": "OP80",
+      "to": "B8"
+    },
+    {
+      "from": "B8",
+      "to": "L8"
+    },
+    {
+      "from": "L8",
+      "to": "OP90"
+    },
+    {
+      "from": "OP90",
+      "to": "B9"
+    },
+    {
+      "from": "B9",
+      "to": "L9"
+    },
+    {
+      "from": "L9",
+      "to": "OP100"
+    },
+    {
+      "from": "OP100",
+      "to": "B10"
+    },
+    {
+      "from": "B10",
+      "to": "L10"
+    },
+    {
+      "from": "L10",
+      "to": "OP130"
+    },
+    {
+      "from": "B6",
+      "to": "OP70"
+    },
+    {
+      "from": "B7",
+      "to": "OP80"
+    },
+    {
+      "from": "OP10",
+      "to": "L1"
+    },
+    {
+      "from": "OP20",
+      "to": "L2"
+    },
+    {
+      "from": "OP30",
+      "to": "L3"
+    },
+    {
+      "from": "OP40",
+      "to": "L4"
+    },
+    {
+      "from": "OP50",
+      "to": "L5"
+    },
+    {
+      "from": "OP60",
+      "to": "OP70"
+    },
+    {
+      "from": "OP70",
+      "to": "OP80"
+    },
+    {
+      "from": "OP80",
+      "to": "L8"
+    },
+    {
+      "from": "OP90",
+      "to": "L9"
+    },
+    {
+      "from": "OP100",
+      "to": "L10"
+    }
+  ]
+}
