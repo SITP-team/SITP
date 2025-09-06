@@ -11,7 +11,6 @@ def load_production_line_data(file_path: str) -> dict:
     with open(file_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
 def extract_conveyor_capacities(graph_data: dict) -> dict:
     """提取传送带固定容量（key：传送带名，value：固定容量）"""
     conveyor_cap = {}
@@ -84,7 +83,7 @@ def main():
         )
 
         # 设置迭代参数
-        max_iterations = 50  # 最大迭代次数
+        max_iterations = 200  # 最大迭代次数
         stop_temperature = 0.1  # 停止温度
 
         print(f"\n=== 启动Algorithm 4缓冲区优化 ===")
@@ -124,8 +123,11 @@ def main():
         algo4.add_history_solution(initial_solution, initial_total, current_qualified, current_throughput)
 
         # 主迭代循环
-        while algo4.iteration < max_iterations and algo4.temperature > stop_temperature:
+        while (algo4.iteration < max_iterations
+               and algo4.temperature > stop_temperature
+               and algo4.no_improve_count < algo4.no_improve_threshold):  # 新增条件
             print(f"\n--- 迭代 {algo4.iteration + 1}/{max_iterations}，温度：{algo4.temperature:.2f} ---")
+            print(f"连续无更优解次数：{algo4.no_improve_count}/{algo4.no_improve_threshold}")  # 新增：打印计数器
 
             # 1. 生成候选解
             candidate_solution = algo4._generate_candidate_solution()
@@ -161,7 +163,12 @@ def main():
                 current_qualified = candidate_qualified
                 current_throughput = candidate_throughput
             else:
+                algo4.get_best_solution()  # 触发计数器更新
                 print(f"❌ 拒绝候选解")
+
+        # 优化结束时，打印终止原因
+        if algo4.no_improve_count >= algo4.no_improve_threshold:
+            print(f"\n提前终止：连续{algo4.no_improve_threshold}次迭代无更优解")
 
         # 优化结束，输出结果
         print(f"\n=== Algorithm 4优化结束 ===")

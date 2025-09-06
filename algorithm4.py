@@ -8,11 +8,15 @@ from typing import List, Dict, Tuple, Any
 class Algorithm4:
     def __init__(self, buffer_names: List[str], max_buffer_per_slot: int, buffer_conveyor_map: Dict[str, int]):
         """
-        初始化带平均化的模拟退火算法
-        :param buffer_names: 线边缓冲区名称列表（如 ["B1", "B2", ..., "B10"]）
-        :param max_buffer_per_slot: 每个缓冲区的最大容量
-        :param buffer_conveyor_map: 缓冲区→传送带固定容量映射
-        """
+                初始化带平均化的模拟退火算法
+                :param buffer_names: 线边缓冲区名称列表（如 ["B1", "B2", ..., "B10"]）
+                :param max_buffer_per_slot: 每个缓冲区的最大容量
+                :param buffer_conveyor_map: 缓冲区→传送带固定容量映射
+                """
+        # 新增参数：连续无更优解的终止阈值
+        self.no_improve_threshold = 10  # 可自定义，如连续10次无改进则终止
+        self.no_improve_count = 0  # 连续无改进计数器
+        self.best_total_so_far = float('inf')  # 记录历史最优解的总容量（初始设为无穷大）
         self.buffer_names = buffer_names
         self.max_buffer = max_buffer_per_slot
         self.buffer_conveyor_map = buffer_conveyor_map
@@ -27,22 +31,21 @@ class Algorithm4:
         self.observations: Dict[Tuple[Tuple[str, int], ...], List[float]] = {}
 
         self._init_initial_solution()
-        self.temperature = self.current_total_buffer * 2  # 初始温度
+        self.temperature = self.current_total_buffer * 5  # 初始温度
 
     def _init_initial_solution(self) -> None:
         """从JSON文件加载初始缓冲区容量配置"""
         try:
-            with open("production_line02.json", "r", encoding="utf-8") as f:
+            with open("default_production_line.json", "r", encoding="utf-8") as f:
                 data = json.load(f)
         except FileNotFoundError:
-            raise FileNotFoundError("配置文件 production_line02.json 未找到")
+            raise FileNotFoundError("配置文件 default_production_line.json 未找到")
 
         for node in data.get("nodes", []):
             if node.get("type") == "缓冲区" and node.get("name") in self.buffer_names:
                 buf_name = node["name"]
                 self.current_solution[buf_name] = node["data"]["capacity"]
 
-        self.current_total_buffer = sum(self.current_solution.values())
         print(f"Algorithm 4 初始解：{self.current_solution}，总容量：{self.current_total_buffer}")
 
     def _generate_candidate_solution(self) -> Dict[str, int]:
@@ -127,4 +130,10 @@ class Algorithm4:
         # 按总容量升序排序，取第一个
         qualified_solutions.sort(key=lambda x: x[1])
         best_sol, best_total, _, best_throughput = qualified_solutions[0]
+        # 新增：若当前最优解优于历史记录，重置计数器
+        if best_total < self.best_total_so_far:
+            self.best_total_so_far = best_total
+            self.no_improve_count = 0  # 重置计数器
+        else:
+            self.no_improve_count += 1  # 无改进，计数器+1
         return best_sol, best_total, best_throughput
