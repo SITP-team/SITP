@@ -36,35 +36,40 @@ class Algorithm4:
     def _init_initial_solution(self) -> None:
         """从JSON文件加载初始缓冲区容量配置"""
         try:
-            with open("default_production_line.json", "r", encoding="utf-8") as f:
                 data = json.load(f)
         except FileNotFoundError:
-            raise FileNotFoundError("配置文件 default_production_line.json 未找到")
 
         for node in data.get("nodes", []):
             if node.get("type") == "缓冲区" and node.get("name") in self.buffer_names:
                 buf_name = node["name"]
                 self.current_solution[buf_name] = node["data"]["capacity"]
 
+        self.current_total_buffer = sum(self.current_solution.values())
         print(f"Algorithm 4 初始解：{self.current_solution}，总容量：{self.current_total_buffer}")
 
     def _generate_candidate_solution(self) -> Dict[str, int]:
-        """生成满足约束条件的候选解"""
+        """生成满足约束条件的候选解（可同时调整多个缓冲区）"""
         candidate = self.current_solution.copy()
-        selected_buf = random.choice(self.buffer_names)
-        fixed_cap = self.buffer_conveyor_map[selected_buf]
-        current_cap = candidate[selected_buf]
-        new_cap = current_cap
+        # 随机确定本次要调整的缓冲区数量（例如1到3个，可根据需求修改范围）
+        num_to_change = random.randint(1, 5)  # 这里设置为1-3个，可自定义
+        # 从所有缓冲区中随机选择不重复的num_to_change个
+        selected_bufs = random.sample(self.buffer_names, num_to_change)
 
-        # 寻找符合约束的新容量值
-        while True:
-            delta = random.choice([-1, 1])
-            new_cap = current_cap + delta
-            # 确保容量非负且总容量在[1, 10]范围内
-            if new_cap >= 0 and 1 <= (fixed_cap + new_cap) <= 10:
-                break
+        for buf in selected_bufs:
+            fixed_cap = self.buffer_conveyor_map[buf]
+            current_cap = candidate[buf]
+            new_cap = current_cap
 
-        candidate[selected_buf] = new_cap
+            # 为每个选中的缓冲区寻找符合约束的新容量值
+            while True:
+                delta = random.choice([-1, 1])
+                new_cap = current_cap + delta
+                # 确保容量非负且总容量（固定+缓冲）在[1, 10]范围内
+                if new_cap >= 0 and 1 <= (fixed_cap + new_cap) <= 10:
+                    break
+
+            candidate[buf] = new_cap
+
         return candidate
 
     def _calculate_total_buffer(self, solution: Dict[str, int]) -> int:

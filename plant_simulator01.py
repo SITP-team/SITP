@@ -160,7 +160,6 @@ def add_production_line() -> bool:
 
     try:
         # 读取生产线配置文件
-        file_path = os.path.join(os.path.dirname(__file__), 'default_production_line.json')
         with open(file_path, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
 

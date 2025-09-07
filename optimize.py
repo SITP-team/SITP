@@ -65,11 +65,10 @@ def main():
         # 显示欢迎信息
         print("=" * 50)
         print("发动机缸盖生产线缓冲区优化系统")
-        print(f"目标：月产能≥29000件（日均≥{TARGET_DAILY_THROUGHPUT:.2f}件），最小化总缓冲区容量")
+        print(f"目标：月产能≥29000件，最小化总缓冲区容量")
         print("=" * 50)
 
         # 加载生产线数据
-        graph_data = load_production_line_data("default_production_line.json")
 
         # 处理传送带与缓冲区映射关系
         conveyor_capacities = extract_conveyor_capacities(graph_data)
