@@ -60,6 +60,29 @@ class PlantSimState:
         self._data_writing = value
 
 
+def reset_and_increment() -> bool:
+    """在Plant Simulation中执行SimTalk，启用重置时递增变量功能"""
+    # 获取Plant Simulation状态实例（确保与现有逻辑一致）
+    from plant_simulator01 import PlantSimState
+    state = PlantSimState.get_instance()
+
+    if not state.plant_sim:
+        print("⚠️ Plant Simulation未初始化，无法执行重置递增操作")
+        return False
+
+    try:
+        # SimTalk代码：启用事件控制器重置时递增随机数变量
+        # 可根据实际需要调整变量名称和控制器路径
+        simtalk_code = [
+            f".模型.模型.事件控制器.IncrementRandomNumbersVariantOnReset := True;",
+        ]
+        state.plant_sim.ExecuteSimTalk("\n".join(simtalk_code))
+        print("✅ 已启用重置时变量递增功能")
+    except Exception as e:
+        print(f"❌ 执行重置递增SimTalk失败: {str(e)}")
+    return True
+
+
 def init_plant_sim_instance(model_file: str = MODEL_FILE) -> bool:
     """初始化Plant Simulation实例并加载模型"""
     state = PlantSimState.get_instance()
@@ -159,6 +182,7 @@ def add_production_line() -> bool:
         return False
 
     try:
+        file_path = os.path.join(os.path.dirname(__file__), 'default_production_line.json')
         # 读取生产线配置文件
         with open(file_path, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
@@ -247,7 +271,7 @@ def run_simulation(end_time: str = "2592000") -> bool:
         print(f"⏳ 正在运行仿真...")
 
         # 等待仿真完成并写入数据
-        time.sleep(3)
+        time.sleep(1)
         print("⏳ 正在写入仿真数据...")
         state.plant_sim.ExecuteSimTalk(state.data_writing)
 
@@ -340,26 +364,6 @@ def get_simulation_results() -> Tuple[bool, int]:
         return False, 0
 
 
-def close_plant_sim_instance():
-    """关闭Plant Simulation实例，释放资源"""
-    state = PlantSimState.get_instance()
-
-    if state.plant_sim is not None:
-        try:
-            state.plant_sim.SaveModel(SAVED_MODEL_FILE)
-            print(f"✅ 最终模型已保存至：{SAVED_MODEL_FILE}")
-
-            del state.plant_sim
-            state.plant_sim = None
-            state.model_loaded = False
-            print("✅ Plant Simulation已关闭")
-        except Exception as e:
-            print(f"⚠️ 关闭Plant Simulation失败: {str(e)}")
-        finally:
-            pythoncom.CoUninitialize()
-            print("✅ COM环境已释放")
-
-
 def create_plant_simulation_model(
         buffer_solution: Dict[str, int],
         end_time: str = "2592000",  # 30天的秒数
@@ -368,7 +372,7 @@ def create_plant_simulation_model(
     if not reset_simulation_results():
         return False, 0
 
-    time.sleep(3)
+    time.sleep(1)
 
     if not modify_buffer_capacity(buffer_solution):
         return False, 0

@@ -59,7 +59,7 @@ def create_plant_simulation_model(model_setup_code, data_writing_code):
         # 第一步：执行模型建立代码
         print("⏳ 正在建立模型结构...")
         plant_sim.ExecuteSimTalk(model_setup_code)
-        time.sleep(3)
+        time.sleep(1)
         # 第二步：执行数据写入代码
         print("⏳ 正在写入仿真数据...")
         plant_sim.ExecuteSimTalk(data_writing_code)

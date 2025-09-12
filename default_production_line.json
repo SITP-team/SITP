@@ -363,7 +363,7 @@
             "name": "B2",
             "type": "缓冲区",
             "data": {
-                "capacity": 1
+                "capacity": 0
             }
         },
         {
@@ -377,49 +377,49 @@
             "name": "B4",
             "type": "缓冲区",
             "data": {
-                "capacity": 1
+                "capacity": 0
             }
         },
         {
             "name": "B5",
             "type": "缓冲区",
             "data": {
-                "capacity": 1
+                "capacity": 2
             }
         },
         {
             "name": "B6",
             "type": "缓冲区",
             "data": {
-                "capacity": 1
+                "capacity": 3
             }
         },
         {
             "name": "B7",
             "type": "缓冲区",
             "data": {
-                "capacity": 1
+                "capacity": 2
             }
         },
         {
             "name": "B8",
             "type": "缓冲区",
             "data": {
-                "capacity": 1
+                "capacity": 0
             }
         },
         {
             "name": "B9",
             "type": "缓冲区",
             "data": {
-                "capacity": 1
+                "capacity": 2
             }
         },
         {
             "name": "B10",
             "type": "缓冲区",
             "data": {
-                "capacity": 1
+                "capacity": 0
             }
         }
     ],

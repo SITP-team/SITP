@@ -1,8 +1,9 @@
 import time
 import pythoncom
 import json
+from typing import Dict
 from algorithm4 import Algorithm4
-from plant_simulator01 import create_plant_simulation_model, init_plant_sim_instance, add_production_line
+from plant_simulator01 import create_plant_simulation_model, init_plant_sim_instance, add_production_line,reset_and_increment,modify_buffer_capacity,run_simulation,get_simulation_results
 from path_config import MODEL_FILE
 
 
@@ -45,12 +46,22 @@ def initialize_algorithm(buffer_names: list, max_buffer: int, conv_map: dict) ->
     )
 
 
-def validate_solution(solution: dict, end_time: str) -> tuple[bool, float]:
-    """验证解决方案的产能是否达标"""
-    return create_plant_simulation_model(
-        buffer_solution=solution,
-        end_time=end_time
-    )
+def validate_solution(solution: dict, end_time: str, num_simulations: int = 5) -> tuple[bool, int]:
+    """验证解决方案的产能是否达标（多次仿真取平均值）"""
+    total_throughput = 0
+    # 执行多次仿真
+    for i in range(num_simulations):
+        print(f"--- 第 {i + 1}/{num_simulations} 次仿真 ---")
+        qualified, throughput = create_plant_simulation_model(buffer_solution=solution)
+        total_throughput += throughput
+
+    # 计算平均吞吐量
+    avg_throughput = int(round(total_throughput / num_simulations))
+    # 判断是否达标（基于平均吞吐量）
+    target_total = 29000  # 月产能目标
+    is_qualified = avg_throughput >= target_total
+    print(f"📊 {num_simulations}次仿真平均吞吐量: {avg_throughput}，是否达标: {is_qualified}")
+    return is_qualified, avg_throughput
 
 
 def main():
@@ -69,6 +80,7 @@ def main():
         print("=" * 50)
 
         # 加载生产线数据
+        graph_data = load_production_line_data("default_production_line.json")
 
         # 处理传送带与缓冲区映射关系
         conveyor_capacities = extract_conveyor_capacities(graph_data)
@@ -82,7 +94,7 @@ def main():
         )
 
         # 设置迭代参数
-        max_iterations = 200  # 最大迭代次数
+        max_iterations = 500  # 最大迭代次数
         stop_temperature = 0.1  # 停止温度
 
         print(f"\n=== 启动Algorithm 4缓冲区优化 ===")
@@ -103,6 +115,8 @@ def main():
         if not add_production_line():
             print("❌ 添加生产线失败，退出程序")
             return
+
+        reset_and_increment()  # 移到这里，作为初始化步骤执行一次
 
         # 将初始缓冲区方案注入到有向图数据
         for node in graph_data["nodes"]:
@@ -162,8 +176,12 @@ def main():
                 current_qualified = candidate_qualified
                 current_throughput = candidate_throughput
             else:
-                algo4.get_best_solution()  # 触发计数器更新
+                algo4.reject_candidate()  # 调用拒绝处理方法
                 print(f"❌ 拒绝候选解")
+
+            # 无论接受与否，都递增迭代次数并冷却温度
+            algo4.iteration += 1
+            algo4.cool_temperature()
 
         # 优化结束时，打印终止原因
         if algo4.no_improve_count >= algo4.no_improve_threshold:
@@ -174,7 +192,7 @@ def main():
         best_solution, best_total, best_throughput = algo4.get_best_solution()
         print(f"最优缓冲区方案：{best_solution}")
         print(f"最优总缓冲区容量：{best_total} 件")
-        print(f"最优方案吞吐量：{best_throughput:.2f} 件")
+        print(f"最优方案吞吐量：{best_throughput} 件")
         print(f"是否达标：{best_throughput >= TARGET_DAILY_THROUGHPUT}")
         print(f"历史达标方案数量：{len([s for s in algo4.history_solutions if s[2]])}")
 
